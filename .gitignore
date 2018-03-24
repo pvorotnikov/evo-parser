@@ -106,3 +106,4 @@ virtualenv/
 
 # Data
 data/
+result.json
