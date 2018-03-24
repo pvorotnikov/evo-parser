@@ -106,4 +106,5 @@ virtualenv/
 
 # Data
 data/
-result.json
+out/*
+!.gitkeep

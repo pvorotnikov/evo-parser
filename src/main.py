@@ -1,82 +1,70 @@
-import json, re
-from datetime import date
+import json, csv, argparse, datetime
+import dateparser
 from os import path, listdir
-from bs4 import BeautifulSoup
+from profile_parser import ProfileParser
+
+
+def dump_json(data, out):
+    """
+    Write output to JSON file
+    """
+    with open(out, 'w') as fp:
+        json.dump(data, fp, indent=2)
+
+
+def dump_csv(data, out):
+    with open(out, 'w') as fp:
+        fieldnames = ['id', 'username', 'title', 'posts', 'lastpost', 'registered']
+        writer = csv.DictWriter(fp, fieldnames=fieldnames)
+        writer.writeheader()
+        for entry in data:
+            writer.writerow(entry)
+
+
+def process_dir(data_dir, timebase=None):
+
+    profiles = []
+    forums = []
+    topics = []
+
+    if timebase is not None:
+        relative_base = dateparser.parse(timebase)
+    else:
+        relative_base = datetime.datetime.now()
+
+    for f in listdir(data_dir):
+
+        # if the object name matches a pattern, parse it
+        if f.startswith('profile.php?id='):
+            profile = ProfileParser(path.join(data_dir, f), relative_base)
+            profile.parse()
+            profiles.append({
+                'id': profile.user_id,
+                'username': profile.user_name,
+                'title': profile.user_title,
+                'posts': profile.user_posts,
+                'lastpost': profile.user_last_post,
+                'registered': profile.user_registered
+            })
+
+        if f.startswith('viewforum.php?id='):
+            # TODO: parse forum
+            pass
+
+        if f.startswith('viewtopic.php?id='):
+            # TODO: parse topic
+            pass
+
+    dump_json(profiles, 'out/profiles-{}.json'.format(str(relative_base.date())))
+    dump_csv(profiles, 'out/profiles-{}.csv'.format(str(relative_base.date())))
+
 
 def main():
-
-    # define your search filter here
-    date_filter_start = date(2015, 1, 1)
-    date_filter_end = date(2015, 2, 1)
-    folder_match = re.compile('^\d+-\d+-\d+$')
-
-    # get absolute path of the cwd
-    cwd = path.abspath('.')
-
-    results = {}
-
-    # list all objects here
-    for d in listdir(cwd):
-
-        # if the object is dir and is in yyyy-mm-dd format, list everything inside
-        if path.isdir(d) and folder_match.search(d):
-
-            folder_parts = d.split('-')
-            folder_date = date(int(folder_parts[0]), int(folder_parts[1]), int(folder_parts[2]))
-            if folder_date < date_filter_start or folder_date > date_filter_end:
-                continue
-
-            # add new container for the d
-            results[d] = {}
-
-            for f in listdir(d):
-
-                # if the object name matches a pattern, parse it
-                if f.startswith('index.php?topic='):
-                    topic = f.split('=')[1]
-                    (topic_number, comment_number) = topic.split('.')
-
-
-                    # create new topic
-                    if None == results[d].get(topic_number):
-                        results[d][topic_number] = {'title': 'Unknown title', 'posts': []}
-
-
-                    # read the file (the file is auto closed after the block exits)
-                    with open(path.join(cwd, d, f)) as fp:
-
-                        # put everything in try / except not to stop the execution
-                        # should any error occurs
-                        try :
-
-                            html_contents = fp.read()
-
-                            # parse it
-                            soup = BeautifulSoup(html_contents, 'html.parser')
-
-                            # get the title if present
-                            title = soup.h1
-                            if None != title:
-                                # encode the title in ascii because of reasons (stupid internet culture)
-                                results[d][topic_number]['title'] = title.get_text().strip().encode('ascii', 'ignore')
-
-                            # get the posts
-                            posts = soup.findAll('div', { 'class' : 'post' })
-                            for p in posts:
-                                results[d][topic_number]['posts'].append(p.get_text().strip())
-
-                            print('Parsed @ comment {} of topic {} ({}) from {}'.format(comment_number, topic_number, results[d][topic_number]['title'], d))
-
-                        except Exception as e:
-                            print('Error occurred: {}'.format(e.message))
-
-            # uncomment this break for development
-            # break
-
-    # now that we have all the info, dump it
-    with open('result.json', 'w') as fp:
-        json.dump(results, fp, indent=2)
-
+    parser = argparse.ArgumentParser(description='EVO Parser.')
+    parser.add_argument('datadir', type=str, help='data directory')
+    parser.add_argument('timebase', type=str, help='relative time base')
+    args = parser.parse_args()
+    process_dir(path.join(path.abspath('.'), args.datadir), args.timebase)
 
 
 if __name__ == '__main__':
