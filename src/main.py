@@ -42,6 +42,7 @@ def process_forum(data_dir, relative_base=None):
             for item in forum.topics:
                 forums.append({
                     'forumname': item.forumname,
+                    'topicid': item.id,
                     'topicname': item.name,
                     'topicauthor': item.author,
                     'topicreplies': item.replies,
@@ -51,7 +52,7 @@ def process_forum(data_dir, relative_base=None):
                 })
 
     dump_json(forums, 'out/forums-{}.json'.format(str(relative_base.date())))
-    dump_csv(['forumname', 'topicname', 'topicauthor', 'topicreplies', 'topicviews', 'topiclastpost', 'topiclastuser'],
+    dump_csv(['topicid', 'forumname', 'topicname', 'topicauthor', 'topicreplies', 'topicviews', 'topiclastpost', 'topiclastuser'],
              forums,
              'out/forums-{}.csv'.format(str(relative_base.date())))
 

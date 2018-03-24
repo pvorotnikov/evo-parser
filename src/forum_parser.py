@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 
 Topic = namedtuple('Topic', [
     'forumname',
+    'id',
     'name',
     'author',
     'replies',
@@ -39,9 +40,10 @@ class ForumParser():
 
                 # populate topics
                 for topic in self._get_topics(soup):
-                    name, author, replies, views, lastpost, lastuser = topic
+                    id, name, author, replies, views, lastpost, lastuser = topic
                     self.topics.append(Topic(
                         forumname=forum_name,
+                        id=id,
                         name=name,
                         author=author,
                         replies=replies,
@@ -65,6 +67,7 @@ class ForumParser():
             try:
                 cells = row.find_all('td')
 
+                id = int(cells[0].find('div', {'class': 'tclcon'}).find('a').get('href').split('=')[-1])
                 author = cells[0].find('span', {'class': 'byuser'}).find('a').getText().strip()\
                     .encode('ascii', 'ignore')
                 name = cells[0].find('div', {'class': 'tclcon'}).find('a').getText().strip().encode('ascii', 'ignore')
@@ -74,7 +77,7 @@ class ForumParser():
                 lastuser = cells[3].find('span', {'class': 'byuser'}).find('a').getText().strip()\
                     .encode('ascii', 'ignore')
 
-                result.append((name, author, replies, views, lastpost, lastuser))
+                result.append((id, name, author, replies, views, lastpost, lastuser))
 
             except Exception as e:
                 print('Error in topic {}'.format(str(e)))
