@@ -9,6 +9,8 @@
 3. Activate virtualenv: `source ./virtualenv/bin/activate` 
 4. Install dependencies: `pip install -r requirements.txt`
 5. Place your data in `data` folder
-6. Start: `python src/main.py <path-to-data> <time-base>`, where:
+6. Start: `python src/main.py <path-to-data> <time-base> <object>`, where:
     * `<path-to-data>` is the relative (or absolute) path to the directory containing all the data.
     * `<time-base>` is the date of the export that serves as relative time base for any date calculations.
+    * `<object>` is the type of objects to parse. Possible values are: `profile`, `forum`, `topic`
+7. Let the script do its magic and you will find your results in `out` folder in JSON and CSV format.
