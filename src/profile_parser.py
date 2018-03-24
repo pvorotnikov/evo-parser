@@ -51,13 +51,13 @@ class ProfileParser():
                 # populate user registered
                 user_registered = fieldsets[-1].find_all("dd")[-1]
                 if user_registered:
-                    self.user_registered = self.parse_date(user_registered.getText().strip())
+                    self.user_registered = self._parse_date(user_registered.getText().strip())
 
                 # populate user last post
                 if self.user_posts > 0:
                     user_last_post = fieldsets[-1].find_all("dd")[1]
                     if user_last_post:
-                        self.user_last_post = self.parse_date(user_last_post.getText().strip())
+                        self.user_last_post = self._parse_date(user_last_post.getText().strip())
 
             print('{:<20}{}'.format('user_id', self.user_id))
             print('{:<20}{}'.format('user_name', self.user_name))
@@ -69,5 +69,5 @@ class ProfileParser():
         except Exception as e:
             print('Error occurred while parsing file {}: {}'.format(self.file_name, str(e)))
 
-    def parse_date(self, date_str):
+    def _parse_date(self, date_str):
         return str(dateparser.parse(date_str, settings={'RELATIVE_BASE': self.relative_base}))
