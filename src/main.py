@@ -3,17 +3,28 @@ import dateparser
 from os import path, listdir
 from profile_parser import ProfileParser
 from forum_parser import ForumParser
+from topic_parser import TopicParser
 
 
 def dump_json(data, out):
     """
     Write output to JSON file
+    :param data:
+    :param out:
+    :return:
     """
     with open(out, 'w') as fp:
         json.dump(data, fp, indent=2)
 
 
 def dump_csv(fieldnames, data, out):
+    """
+    Write output to CSV file
+    :param fieldnames:
+    :param data:
+    :param out:
+    :return:
+    """
     with open(out, 'w') as fp:
         writer = csv.DictWriter(fp, fieldnames=fieldnames)
         writer.writeheader()
@@ -22,16 +33,50 @@ def dump_csv(fieldnames, data, out):
 
 
 def process_topic(data_dir, relative_base=None):
+    """
+    Process topics
+    :param data_dir:
+    :param relative_base:
+    :return:
+    """
     topics = []
+
+    count = 0
 
     for f in listdir(data_dir):
 
         if f.startswith('viewtopic.php?id='):
-            # TODO: parse topic
-            pass
+            topic = TopicParser(path.join(data_dir, f), relative_base)
+            topic.parse()
+            for item in topic.posts:
+                topics.append({
+                    'forumname': item.forumname,
+                    'topicname': item.topicname,
+                    'topicid': item.topicid,
+                    'date': item.date,
+                    'author': item.author,
+                    'authorid': item.authorid,
+                    'authortitle': item.authortitle,
+                    'message': item.message
+                })
+
+            count += 1
+            # if count == 100:
+            #     break
+
+    dump_json(topics, 'out/topics-{}.json'.format(str(relative_base.date())))
+    dump_csv(['forumname', 'topicname', 'topicid', 'date', 'author', 'authorid', 'authortitle', 'message'],
+             topics,
+             'out/topics-{}.csv'.format(str(relative_base.date())))
 
 
 def process_forum(data_dir, relative_base=None):
+    """
+    Process forums
+    :param data_dir:
+    :param relative_base:
+    :return:
+    """
     forums = []
 
     for f in listdir(data_dir):
@@ -52,12 +97,19 @@ def process_forum(data_dir, relative_base=None):
                 })
 
     dump_json(forums, 'out/forums-{}.json'.format(str(relative_base.date())))
-    dump_csv(['topicid', 'forumname', 'topicname', 'topicauthor', 'topicreplies', 'topicviews', 'topiclastpost', 'topiclastuser'],
+    dump_csv(['topicid', 'forumname', 'topicname', 'topicauthor', 'topicreplies', 'topicviews', 'topiclastpost',
+              'topiclastuser'],
              forums,
              'out/forums-{}.csv'.format(str(relative_base.date())))
 
 
 def process_profile(data_dir, relative_base=None):
+    """
+    Process profiles
+    :param data_dir:
+    :param relative_base:
+    :return:
+    """
     profiles = []
 
     for f in listdir(data_dir):
@@ -81,6 +133,10 @@ def process_profile(data_dir, relative_base=None):
 
 
 def main():
+    """
+    Main entry point
+    :return:
+    """
     parser = argparse.ArgumentParser(description='EVO Parser.')
     parser.add_argument('datadir', type=str, help='data directory')
     parser.add_argument('timebase', type=str, help='relative time base')
